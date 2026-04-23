@@ -1,0 +1,10 @@
+name = "fideluxe"
+compatibility_date = "2024-11-06"
+pages_build_output_dir = "public"
+
+# Il binding KV e i secret si configurano dal dashboard Pages.
+# Questo file serve solo come riferimento / per wrangler pages dev.
+
+[[kv_namespaces]]
+binding = "FIDELUXE_KV"
+id = "REPLACE_WITH_YOUR_KV_ID"
