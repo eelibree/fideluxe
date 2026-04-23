@@ -7,4 +7,4 @@ pages_build_output_dir = "public"
 
 [[kv_namespaces]]
 binding = "FIDELUXE_KV"
-id = "FIDELUXE_DB"
+id = "8374946ee4c747f493521fafbde5ae8c"
