@@ -79,7 +79,7 @@ openssl rand -hex 32
 
 ### 5) Deploy
 
-Se fai upload manuale: trascina il contenuto della cartella (NON la cartella stessa) nella UI di Pages.
+Se fai upload manuale: trascina il contenuto della cartella (NON la cartella stessa) nella UI di Pages. 
 Se usi Git: fai push, Pages costruisce in automatico.
 
 ### 6) Prima apertura
