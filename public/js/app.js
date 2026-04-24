@@ -8,6 +8,7 @@
     categories: [],
     filter: { search: '', category: null, favOnly: false },
     selectedId: null,
+    pendingAdminIntent: null, // 'panel' | 'newCard' | null — cosa fare dopo auth admin
   };
 
   const app = {
@@ -100,6 +101,32 @@
     document.getElementById('detail-copy').addEventListener('click', onCopyNumber);
     document.getElementById('detail-cassa').addEventListener('click', onCassaOpen);
 
+    // Aggiungi tessera dalla home (FAB + empty state)
+    document.getElementById('fab-add-card').addEventListener('click', onAddCardClick);
+    document.getElementById('btn-add-empty').addEventListener('click', onAddCardClick);
+
+    // Inserimento manuale nello scanner (se la camera non funziona)
+    const manualOk = document.getElementById('scanner-manual-ok');
+    const manualInput = document.getElementById('scanner-manual-input');
+    if (manualOk && manualInput) {
+      const submitManual = () => {
+        const val = manualInput.value.trim();
+        if (!val) return;
+        const barcodeField = document.getElementById('f-barcode');
+        if (barcodeField) barcodeField.value = val;
+        manualInput.value = '';
+        Scanner.stop();
+        hide('modal-scanner');
+        // notifica il form admin così aggiorna la preview
+        const evt = new Event('input', { bubbles: true });
+        if (barcodeField) barcodeField.dispatchEvent(evt);
+      };
+      manualOk.addEventListener('click', submitManual);
+      manualInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); submitManual(); }
+      });
+    }
+
     // Chiusura modali (backdrop + tasto X)
     document.querySelectorAll('[data-close]').forEach(el => {
       el.addEventListener('click', (e) => {
@@ -142,6 +169,24 @@
     if (state.role === 'admin') {
       showAdmin();
     } else {
+      state.pendingAdminIntent = 'panel';
+      show('modal-admin-login');
+      document.getElementById('admin-password').focus();
+    }
+  }
+
+  // Click sul FAB "+ Aggiungi tessera" nella home (o sul bottone nell'empty state).
+  // Se già admin → apre direttamente il form. Altrimenti chiede password admin.
+  function onAddCardClick() {
+    if (state.role === 'admin') {
+      if (typeof app.openCardForm === 'function') {
+        app.openCardForm(null);
+      } else {
+        // Fallback: se admin.js non è caricato ancora, vai al pannello
+        showAdmin();
+      }
+    } else {
+      state.pendingAdminIntent = 'newCard';
       show('modal-admin-login');
       document.getElementById('admin-password').focus();
     }
@@ -159,7 +204,17 @@
       document.getElementById('admin-password').value = '';
       hide('modal-admin-login');
       await reloadData();
-      showAdmin();
+
+      // Esegui l'intento che aveva fatto scattare la richiesta password
+      const intent = state.pendingAdminIntent;
+      state.pendingAdminIntent = null;
+      if (intent === 'newCard' && typeof app.openCardForm === 'function') {
+        // Assicuriamoci di essere sulla schermata app (non admin) prima di aprire il form
+        showApp();
+        app.openCardForm(null);
+      } else {
+        showAdmin();
+      }
     } catch (err) {
       errEl.textContent = err.message === 'not_admin' ? 'Questa password non dà accesso admin.' : 'Password errata.';
       errEl.hidden = false;

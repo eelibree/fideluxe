@@ -39,6 +39,9 @@
     // Backup
     document.getElementById('btn-export').addEventListener('click', onExport);
     document.getElementById('btn-import').addEventListener('click', () => onImport(app));
+
+    // Espone la funzione openCardForm così il FAB nella home può aprirla direttamente
+    app.openCardForm = (id) => openCardForm(id, app);
   }
 
   // ============ TABS ============
@@ -140,8 +143,18 @@
     const deleteBtn = document.getElementById('btn-card-delete');
     const form = document.getElementById('form-card');
     form.reset();
-    document.getElementById('f-barcode-preview').innerHTML = '';
-    document.getElementById('f-logo-preview').innerHTML = '';
+
+    // Reset COMPLETO delle preview: HTML, dataset.imageData e input file.
+    // Senza questo, dataset.imageData persiste tra aperture del form e
+    // una nuova tessera eredita il logo/barcode della precedente.
+    const barcodePreview = document.getElementById('f-barcode-preview');
+    const logoPreview = document.getElementById('f-logo-preview');
+    barcodePreview.innerHTML = '';
+    logoPreview.innerHTML = '';
+    delete barcodePreview.dataset.imageData;
+    delete logoPreview.dataset.imageData;
+    document.getElementById('f-logo').value = '';
+    document.getElementById('f-barcode-image').value = '';
 
     // popola categorie
     const sel = document.getElementById('f-categoria');
@@ -160,11 +173,12 @@
       document.getElementById('f-preferita').checked = !!card.preferita;
       document.getElementById('f-note').value = card.note || '';
 
-      // preview
+      // preview logo esistente (solo visualizzazione — NON settiamo dataset.imageData
+      // perché l'imageData va valorizzato solo quando l'utente carica un nuovo file)
       if (card.logo) {
-        document.getElementById('f-logo-preview').innerHTML = `<img src="${card.logo}" alt="logo"/>`;
+        logoPreview.innerHTML = `<img src="${card.logo}" alt="logo"/>`;
       }
-      Barcode.render(document.getElementById('f-barcode-preview'), card);
+      Barcode.render(barcodePreview, card);
     } else {
       title.textContent = 'Nuova tessera';
       deleteBtn.hidden = true;
@@ -290,6 +304,16 @@
   // ============ SCANNER ============
   async function openScanner() {
     showModal('modal-scanner');
+
+    // Reset messaggio errore eventuale da aperture precedenti
+    const errEl = document.getElementById('scanner-error');
+    if (errEl) { errEl.hidden = true; errEl.textContent = ''; }
+
+    // iOS/Safari ha bisogno di un frame per applicare il layout alla modal
+    // prima che html5-qrcode possa calcolare le dimensioni del video.
+    // Usiamo due rAF (primo frame: layout, secondo frame: paint completato).
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
     try {
       await Scanner.start('scanner-box', (text, format) => {
         document.getElementById('f-barcode').value = text;
@@ -300,8 +324,14 @@
         onBarcodeTypeChange();
       });
     } catch (e) {
-      alert('Impossibile aprire la camera: ' + e.message);
-      hideModal('modal-scanner');
+      // Non chiudiamo la modal: mostriamo l'errore lì dentro così
+      // l'utente può leggerlo e chiudere a scelta, oppure inserire manualmente.
+      if (errEl) {
+        errEl.textContent = e.message || 'Impossibile avviare la camera.';
+        errEl.hidden = false;
+      } else {
+        alert('Impossibile aprire la camera: ' + e.message);
+      }
     }
   }
 
