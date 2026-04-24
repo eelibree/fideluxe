@@ -1,5 +1,5 @@
 // Fideluxe — Service Worker
-const VERSION = 'fideluxe-v8';
+const VERSION = 'fideluxe-v9';
 const STATIC_CACHE = `${VERSION}-static`;
 const APP_SHELL = [
   '/',
