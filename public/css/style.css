@@ -593,3 +593,74 @@ input:focus, select:focus, textarea:focus {
 
 /* =========== HELPERS =========== */
 [hidden] { display: none !important; }
+
+/* =========== FAB + EMPTY CTA =========== */
+.empty {
+  text-align: center;
+  padding: var(--s-10) var(--s-4);
+  color: var(--ink-soft);
+  display: flex; flex-direction: column; align-items: center; gap: var(--s-3);
+}
+.empty .btn { margin-top: var(--s-2); }
+
+.fab {
+  position: fixed;
+  right: calc(env(safe-area-inset-right) + 20px);
+  bottom: calc(env(safe-area-inset-bottom) + 20px);
+  width: 56px; height: 56px;
+  padding: 0; margin: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: linear-gradient(145deg, var(--gold) 0%, var(--gold-deep) 100%);
+  color: var(--white);
+  box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255,255,255,0.25);
+  line-height: 0;
+  z-index: 50;
+  transition: transform .15s ease, box-shadow .2s;
+}
+.fab svg { display: block; }
+.fab:hover { transform: translateY(-2px); }
+.fab:active { transform: scale(0.94); }
+
+/* =========== SCANNER EXTRAS =========== */
+.scanner__error {
+  margin-top: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  background: rgba(179, 82, 62, 0.15);
+  color: #FFD9CF;
+  border-radius: var(--r-md);
+  font-size: 13px;
+  max-width: 90%; text-align: center;
+}
+.scanner__manual {
+  margin-top: var(--s-5);
+  width: 90%; max-width: 400px;
+}
+.scanner__manual-label {
+  display: block;
+  font-size: 12px; color: rgba(255,255,255,0.7);
+  text-transform: uppercase; letter-spacing: 0.08em;
+  margin-bottom: var(--s-2); text-align: center;
+}
+.scanner__manual-row { display: flex; gap: var(--s-2); }
+.scanner__manual-row input {
+  flex: 1;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: var(--white);
+}
+.scanner__manual-row input::placeholder { color: rgba(255,255,255,0.4); }
+.scanner__manual-row input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(176,141,87,0.25);
+}
+.scanner__manual-row .btn { flex-shrink: 0; }
+
+/* Assicura che il video della camera riempia sempre il box (fix iOS) */
+#scanner-box { position: relative; }
+#scanner-box video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+  display: block;
+}
