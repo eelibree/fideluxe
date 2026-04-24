@@ -55,9 +55,9 @@
     hide('screen-app'); hide('screen-admin');
     show('screen-login');
     document.body.classList.remove('has-app');
-    // Reset preventivo dello stato keyboard-aware (se veniamo da un logout
-    // avvenuto mentre era attivo il handler viewport)
-    detachKeyboardHandler();
+    // Reset preventivo dello stato keyboard-aware del login (se veniamo da un
+    // logout avvenuto mentre era attivo il handler viewport)
+    detachLoginViewportHandler();
     document.getElementById('screen-login').classList.remove('screen--keyboard-aware');
     document.getElementById('login-password').focus();
   }
@@ -69,7 +69,7 @@
     document.body.classList.add('has-app');
     // Se veniamo dal login, la tastiera potrebbe essere stata appena chiusa:
     // puliamo lo stato keyboard-aware per sicurezza.
-    detachKeyboardHandler();
+    detachLoginViewportHandler();
     document.getElementById('screen-login').classList.remove('screen--keyboard-aware');
     // il pulsante Admin è sempre visibile quando si è loggati:
     // apre il pannello se già admin, altrimenti mostra il prompt password
@@ -183,17 +183,45 @@
 
     input.addEventListener('focus', () => {
       screen.classList.add('screen--keyboard-aware');
-      attachKeyboardHandler(screen);
+      attachLoginViewportHandler(screen);
     });
     input.addEventListener('blur', () => {
       // piccolo delay per evitare flicker se il focus si sposta immediatamente
       // su un altro elemento della stessa form (es. il bottone Entra)
       setTimeout(() => {
         if (document.activeElement && screen.contains(document.activeElement)) return;
-        detachKeyboardHandler();
+        detachLoginViewportHandler();
         screen.classList.remove('screen--keyboard-aware');
       }, 50);
     });
+  }
+
+  // Handler dedicato al login iniziale: scrive come CSS var --vv-height
+  // l'altezza effettiva del visual viewport. Il CSS usa questa var come
+  // min-height dello screen, così la schermata si adatta allo spazio
+  // sopra la tastiera SENZA translate aggressivi.
+  let _loginVvListener = null;
+  function attachLoginViewportHandler(screen) {
+    detachLoginViewportHandler();
+    if (!window.visualViewport) return; // fallback: il CSS usa 100dvh
+    const vv = window.visualViewport;
+    const update = () => {
+      screen.style.setProperty('--vv-height', vv.height + 'px');
+    };
+    update();
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    _loginVvListener = { vv, update, screen };
+  }
+
+  function detachLoginViewportHandler() {
+    if (!_loginVvListener) return;
+    try {
+      _loginVvListener.vv.removeEventListener('resize', _loginVvListener.update);
+      _loginVvListener.vv.removeEventListener('scroll', _loginVvListener.update);
+      _loginVvListener.screen.style.removeProperty('--vv-height');
+    } catch {}
+    _loginVvListener = null;
   }
 
   function isIOSPWA() {
