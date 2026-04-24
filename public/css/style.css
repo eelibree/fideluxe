@@ -715,32 +715,32 @@ body.has-app .fab { display: inline-flex; }
 }
 
 /* =========== SCREEN KEYBOARD-AWARE (login iniziale) =========== */
-/* Quando l'utente tocca il campo password del login iniziale, la schermata
-   passa da centered a top-aligned e traslata di --kb-offset, così il form
-   resta sempre sopra la tastiera. Stesso pattern della modal admin. */
+/* Quando la tastiera mobile appare, il JS scrive come CSS var --vv-height
+   l'altezza del visual viewport (spazio realmente visibile). Lo screen
+   adotta quella come min-height: il form, già centrato con flexbox,
+   si riposiziona naturalmente al centro dello spazio sopra la tastiera.
+   Niente translate aggressivi → niente form tagliato. */
 .screen--center.screen--keyboard-aware {
-  justify-content: flex-start;
-  padding-top: max(env(safe-area-inset-top), 24px);
-  transition: padding-top .18s ease;
+  min-height: var(--vv-height, 100dvh);
+  /* Padding ridotto in alto e in basso per massimizzare lo spazio utile */
+  padding-top: max(env(safe-area-inset-top), 16px);
+  padding-bottom: max(env(safe-area-inset-bottom), 16px);
+  /* Se il contenuto è comunque più alto dello spazio visibile, scroll naturale */
+  overflow-y: auto;
+  /* Manteniamo justify-content: center ereditato da .screen--center,
+     così il form resta centrato nello spazio disponibile */
 }
 .screen--keyboard-aware .brand {
-  /* Compatta il brand (logo + tagline) per far spazio al form */
+  /* Margine leggermente ridotto per compattare, senza scale aggressivi */
   margin-bottom: var(--s-4);
-  transform: scale(0.85);
-  transform-origin: top center;
-  transition: transform .18s ease, margin-bottom .18s ease;
+  transition: margin-bottom .18s ease;
 }
-.screen--keyboard-aware .card--glass {
-  /* Sposta il form verso l'alto di --kb-offset (aggiornato via JS) */
-  transform: translateY(calc(-1 * var(--kb-offset, 0px)));
-  transition: transform .18s ease;
-}
-/* Su desktop neutralizza (la tastiera virtuale non c'è) */
+/* Su desktop: comportamento default (tastiera virtuale non si applica) */
 @media (min-width: 640px) {
   .screen--center.screen--keyboard-aware {
-    justify-content: center;
+    min-height: 100dvh;
     padding-top: 10vh;
+    overflow-y: visible;
   }
-  .screen--keyboard-aware .brand { transform: none; margin-bottom: var(--s-6); }
-  .screen--keyboard-aware .card--glass { transform: none; }
+  .screen--keyboard-aware .brand { margin-bottom: var(--s-6); }
 }
