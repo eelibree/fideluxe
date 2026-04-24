@@ -713,3 +713,34 @@ body.has-app .fab { display: inline-flex; }
     max-height: 88dvh;
   }
 }
+
+/* =========== SCREEN KEYBOARD-AWARE (login iniziale) =========== */
+/* Quando l'utente tocca il campo password del login iniziale, la schermata
+   passa da centered a top-aligned e traslata di --kb-offset, così il form
+   resta sempre sopra la tastiera. Stesso pattern della modal admin. */
+.screen--center.screen--keyboard-aware {
+  justify-content: flex-start;
+  padding-top: max(env(safe-area-inset-top), 24px);
+  transition: padding-top .18s ease;
+}
+.screen--keyboard-aware .brand {
+  /* Compatta il brand (logo + tagline) per far spazio al form */
+  margin-bottom: var(--s-4);
+  transform: scale(0.85);
+  transform-origin: top center;
+  transition: transform .18s ease, margin-bottom .18s ease;
+}
+.screen--keyboard-aware .card--glass {
+  /* Sposta il form verso l'alto di --kb-offset (aggiornato via JS) */
+  transform: translateY(calc(-1 * var(--kb-offset, 0px)));
+  transition: transform .18s ease;
+}
+/* Su desktop neutralizza (la tastiera virtuale non c'è) */
+@media (min-width: 640px) {
+  .screen--center.screen--keyboard-aware {
+    justify-content: center;
+    padding-top: 10vh;
+  }
+  .screen--keyboard-aware .brand { transform: none; margin-bottom: var(--s-6); }
+  .screen--keyboard-aware .card--glass { transform: none; }
+}
