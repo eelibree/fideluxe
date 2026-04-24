@@ -75,16 +75,17 @@ input:focus, select:focus, textarea:focus {
 /* =========== BRAND =========== */
 .brand { text-align: center; margin-bottom: var(--s-6); }
 .brand__mark {
-  display: inline-grid; place-items: center;
-  width: 72px; height: 72px;
-  border-radius: 50%;
-  background: linear-gradient(145deg, var(--gold) 0%, var(--gold-deep) 100%);
-  color: var(--white);
-  font-family: var(--font-serif); font-size: 34px;
-  box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255,255,255,0.3);
-  margin-bottom: var(--s-3);
+  display: block;
+  width: 96px; height: 96px;
+  margin: 0 auto var(--s-3);
+  object-fit: contain;
+  filter: drop-shadow(0 4px 12px rgba(140, 110, 63, 0.18));
 }
-.brand__mark--sm { width: 34px; height: 34px; font-size: 18px; margin: 0; }
+.brand__mark--sm {
+  width: 38px; height: 38px;
+  margin: 0;
+  filter: none;
+}
 .brand__name {
   margin: 0;
   font-size: 34px; letter-spacing: 0.04em;
@@ -160,12 +161,15 @@ input:focus, select:focus, textarea:focus {
 .btn--block { width: 100%; margin-bottom: var(--s-4); }
 
 .icon-btn {
-  display: grid; place-items: center;
+  display: inline-flex; align-items: center; justify-content: center;
   width: 40px; height: 40px;
+  padding: 0; margin: 0;
   border-radius: 50%;
   color: var(--ink);
-  transition: background .18s;
+  line-height: 0;
+  transition: background .18s, color .18s;
 }
+.icon-btn svg { display: block; }
 .icon-btn:hover, .icon-btn:active { background: rgba(176,141,87,0.12); color: var(--gold-deep); }
 
 .hint { font-size: 13px; color: var(--ink-soft); margin: 0; }
@@ -281,12 +285,17 @@ input:focus, select:focus, textarea:focus {
 .card-tile__fav {
   position: absolute; top: 10px; right: 10px;
   width: 28px; height: 28px;
-  display: grid; place-items: center;
+  padding: 0; margin: 0;
+  display: inline-flex; align-items: center; justify-content: center;
   border-radius: 50%;
   background: rgba(255,251,244,0.9);
   color: var(--ink-soft);
+  line-height: 0;
+  transition: color .18s, transform .18s;
 }
+.card-tile__fav svg { display: block; }
 .card-tile__fav.active { color: var(--gold-deep); }
+.card-tile__fav:active { transform: scale(0.88); }
 
 /* =========== EMPTY =========== */
 .empty { text-align: center; padding: var(--s-10) var(--s-4); color: var(--ink-soft); }
@@ -339,11 +348,15 @@ input:focus, select:focus, textarea:focus {
 .modal__close {
   position: absolute; top: var(--s-3); right: var(--s-3);
   width: 36px; height: 36px;
+  padding: 0; margin: 0;
+  display: inline-flex; align-items: center; justify-content: center;
   border-radius: 50%;
   background: var(--bg-deep); color: var(--ink);
   font-size: 22px; line-height: 1;
   z-index: 2;
+  transition: background .18s;
 }
+.modal__close:hover { background: var(--line); }
 .modal__title {
   margin: 0 0 var(--s-4); font-size: 22px;
 }
@@ -354,9 +367,10 @@ input:focus, select:focus, textarea:focus {
 
 /* =========== DETAIL =========== */
 .detail__head {
-  display: grid; grid-template-columns: auto 1fr auto; gap: var(--s-3);
+  display: grid; grid-template-columns: auto 1fr; gap: var(--s-3);
   align-items: center;
   margin-bottom: var(--s-5);
+  padding-right: 48px; /* lascia spazio alla X di chiusura */
 }
 .detail__logo {
   width: 60px; height: 60px; border-radius: 50%;
@@ -373,10 +387,44 @@ input:focus, select:focus, textarea:focus {
   background: var(--gold);
   text-transform: uppercase; letter-spacing: 0.08em;
 }
-.fav-btn { color: var(--ink-soft); transition: color .18s, transform .18s; }
-.fav-btn[aria-pressed="true"] { color: var(--gold-deep); }
-.fav-btn[aria-pressed="true"] svg { fill: currentColor; }
-.fav-btn:active { transform: scale(0.9); }
+
+/* Barra azioni nel popup dettaglio (fav / copia numero / cassa) */
+.detail__actions {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-2);
+  margin: var(--s-4) 0 var(--s-3);
+}
+.action-btn {
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 6px;
+  padding: 12px 8px;
+  border-radius: var(--r-md);
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 12px; font-weight: 500;
+  line-height: 1;
+  transition: all .18s;
+  min-height: 64px;
+}
+.action-btn svg { display: block; }
+.action-btn > span { font-size: 12px; }
+.action-btn:hover { border-color: var(--gold-soft); background: var(--white); }
+.action-btn:active { transform: scale(0.97); }
+.action-btn[aria-pressed="true"] {
+  color: var(--gold-deep);
+  border-color: var(--gold-soft);
+  background: var(--white);
+}
+.action-btn[aria-pressed="true"] svg { fill: currentColor; }
+.action-btn--primary {
+  background: linear-gradient(145deg, var(--gold) 0%, var(--gold-deep) 100%);
+  color: var(--white); border-color: transparent;
+  box-shadow: var(--shadow-sm);
+}
+.action-btn--primary:hover {
+  color: var(--white); border-color: transparent;
+  box-shadow: var(--shadow-md);
+}
 
 .detail__barcode {
   background: var(--white);
@@ -387,6 +435,18 @@ input:focus, select:focus, textarea:focus {
   min-height: 120px;
 }
 .detail__barcode svg, .detail__barcode canvas, .detail__barcode img { max-width: 100%; height: auto; }
+
+/* Holder generato da qrcodejs (contiene canvas + img sovrapposte) */
+.qr-holder {
+  display: inline-block;
+  line-height: 0;
+  position: relative;
+}
+.qr-holder img { display: block; max-width: 100%; height: auto; }
+.qr-holder canvas { display: block; max-width: 100%; height: auto; }
+/* qrcodejs genera sia canvas che img: mostriamo solo una delle due */
+.qr-holder img + canvas,
+.qr-holder canvas + img { display: none; }
 .detail__number {
   font-family: "SF Mono", "Menlo", monospace;
   text-align: center;
@@ -496,11 +556,14 @@ input:focus, select:focus, textarea:focus {
 .admin-item__actions { display: flex; gap: var(--s-2); flex-shrink: 0; }
 .admin-item__actions button {
   width: 34px; height: 34px;
+  padding: 0; margin: 0;
   border-radius: var(--r-sm);
-  display: grid; place-items: center;
-  font-size: 16px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 16px; line-height: 1;
   background: var(--bg-soft);
+  transition: background .18s, color .18s;
 }
+.admin-item__actions button svg { display: block; }
 .admin-item__actions button:hover { background: var(--bg-deep); }
 .admin-item__actions button.danger:hover { background: rgba(179,82,62,0.12); color: var(--danger); }
 
