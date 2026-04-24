@@ -1,5 +1,5 @@
 // Fideluxe — Service Worker
-const VERSION = 'fideluxe-v1';
+const VERSION = 'fideluxe-v2';
 const STATIC_CACHE = `${VERSION}-static`;
 const APP_SHELL = [
   '/',
@@ -11,7 +11,7 @@ const APP_SHELL = [
   '/js/scanner.js',
   '/js/admin.js',
   '/manifest.webmanifest',
-  '/icons/icon.svg',
+  '/icons/logo-mark.png',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
 ];
