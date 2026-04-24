@@ -55,6 +55,10 @@
     hide('screen-app'); hide('screen-admin');
     show('screen-login');
     document.body.classList.remove('has-app');
+    // Reset preventivo dello stato keyboard-aware (se veniamo da un logout
+    // avvenuto mentre era attivo il handler viewport)
+    detachKeyboardHandler();
+    document.getElementById('screen-login').classList.remove('screen--keyboard-aware');
     document.getElementById('login-password').focus();
   }
 
@@ -63,6 +67,10 @@
     show('screen-app');
     // Classe sul body: il FAB (fuori da screen-app) è visibile solo qui.
     document.body.classList.add('has-app');
+    // Se veniamo dal login, la tastiera potrebbe essere stata appena chiusa:
+    // puliamo lo stato keyboard-aware per sicurezza.
+    detachKeyboardHandler();
+    document.getElementById('screen-login').classList.remove('screen--keyboard-aware');
     // il pulsante Admin è sempre visibile quando si è loggati:
     // apre il pannello se già admin, altrimenti mostra il prompt password
     document.getElementById('btn-admin').style.display = '';
@@ -141,7 +149,10 @@
           // ferma scanner se chiuso
           if (modal.id === 'modal-scanner') Scanner.stop();
           // stacca handler tastiera se era la modal admin-login
-          if (modal.id === 'modal-admin-login') detachKeyboardHandler();
+          if (modal.id === 'modal-admin-login') {
+            detachKeyboardHandler();
+            modal.classList.remove('modal--keyboard-aware');
+          }
         }
       });
     });
@@ -158,6 +169,31 @@
     // la modal scanner mostriamo un banner informativo. In Safari normale
     // il banner resta nascosto.
     setupScannerPwaHint();
+
+    // Login iniziale: stessa logica keyboard-aware già usata per la modal admin.
+    // Quando l'utente tocca il campo password e appare la tastiera, la schermata
+    // di login reagisce spostando il form verso l'alto tramite --kb-offset.
+    setupLoginKeyboardAware();
+  }
+
+  function setupLoginKeyboardAware() {
+    const screen = document.getElementById('screen-login');
+    const input = document.getElementById('login-password');
+    if (!screen || !input) return;
+
+    input.addEventListener('focus', () => {
+      screen.classList.add('screen--keyboard-aware');
+      attachKeyboardHandler(screen);
+    });
+    input.addEventListener('blur', () => {
+      // piccolo delay per evitare flicker se il focus si sposta immediatamente
+      // su un altro elemento della stessa form (es. il bottone Entra)
+      setTimeout(() => {
+        if (document.activeElement && screen.contains(document.activeElement)) return;
+        detachKeyboardHandler();
+        screen.classList.remove('screen--keyboard-aware');
+      }, 50);
+    });
   }
 
   function isIOSPWA() {
@@ -243,22 +279,23 @@
     attachKeyboardHandler(modal);
   }
 
-  // Handler per visualViewport: aggiorna --kb-offset sulla modal
-  // così lo sheet si sposta verso l'alto dell'altezza della tastiera.
+  // Handler per visualViewport: aggiorna --kb-offset su un elemento target
+  // (modal o screen) così può reagire all'apertura della tastiera mobile.
+  // Un solo listener attivo alla volta (il più recente sostituisce il precedente).
   let _kbListener = null;
-  function attachKeyboardHandler(modal) {
+  function attachKeyboardHandler(target) {
     detachKeyboardHandler();
     if (!window.visualViewport) return; // fallback gestito da CSS (max-height + dvh)
     const vv = window.visualViewport;
     const update = () => {
-      // Differenza tra altezza reale del layout e altezza del visual viewport = tastiera
+      // Differenza tra altezza del layout e altezza del visual viewport = tastiera
       const keyboardHeight = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-      modal.style.setProperty('--kb-offset', keyboardHeight + 'px');
+      target.style.setProperty('--kb-offset', keyboardHeight + 'px');
     };
     update();
     vv.addEventListener('resize', update);
     vv.addEventListener('scroll', update);
-    _kbListener = { vv, update, modal };
+    _kbListener = { vv, update, target };
   }
 
   function detachKeyboardHandler() {
@@ -266,8 +303,10 @@
     try {
       _kbListener.vv.removeEventListener('resize', _kbListener.update);
       _kbListener.vv.removeEventListener('scroll', _kbListener.update);
-      _kbListener.modal.style.removeProperty('--kb-offset');
-      _kbListener.modal.classList.remove('modal--keyboard-aware');
+      _kbListener.target.style.removeProperty('--kb-offset');
+      // Nota: la classe keyboard-aware è rimossa dal chiamante,
+      // non qui, perché in alcuni flussi (blur temporaneo per es.
+      // cambio focus dentro la stessa form) potrebbe servire mantenerla.
     } catch {}
     _kbListener = null;
   }
@@ -284,6 +323,7 @@
       document.getElementById('admin-password').value = '';
       hide('modal-admin-login');
       detachKeyboardHandler();
+      document.getElementById('modal-admin-login').classList.remove('modal--keyboard-aware');
       await reloadData();
 
       // Esegui l'intento che aveva fatto scattare la richiesta password
