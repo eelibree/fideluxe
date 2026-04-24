@@ -68,15 +68,6 @@
 
     <nav id="categories-bar" class="categories-bar" aria-label="Filtra per categoria"></nav>
 
-    <div class="home-actions">
-      <button id="btn-add-top" class="btn btn--primary btn--add" type="button">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
-          <path d="M12 5v14M5 12h14"/>
-        </svg>
-        Aggiungi tessera
-      </button>
-    </div>
-
     <main id="cards-list" class="cards-list" role="list"></main>
 
     <div id="empty-state" class="empty" hidden>
@@ -291,6 +282,9 @@
       <button class="modal__close scanner__close" data-close aria-label="Chiudi">×</button>
       <div id="scanner-box" class="scanner__box"></div>
       <p class="scanner__hint">Inquadra il codice</p>
+      <p id="scanner-pwa-hint" class="scanner__pwa-hint" hidden>
+        Se la fotocamera non si avvia nell'app installata, apri Fideluxe da Safari per usare la scansione.
+      </p>
       <p id="scanner-error" class="scanner__error" hidden></p>
       <div class="scanner__manual">
         <label for="scanner-manual-input" class="scanner__manual-label">Oppure inseriscilo a mano</label>
