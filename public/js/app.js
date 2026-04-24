@@ -54,12 +54,15 @@
   function showLogin() {
     hide('screen-app'); hide('screen-admin');
     show('screen-login');
+    document.body.classList.remove('has-app');
     document.getElementById('login-password').focus();
   }
 
   function showApp() {
     hide('screen-login'); hide('screen-admin');
     show('screen-app');
+    // Classe sul body: il FAB (fuori da screen-app) è visibile solo qui.
+    document.body.classList.add('has-app');
     // il pulsante Admin è sempre visibile quando si è loggati:
     // apre il pannello se già admin, altrimenti mostra il prompt password
     document.getElementById('btn-admin').style.display = '';
@@ -70,6 +73,7 @@
   function showAdmin() {
     hide('screen-app'); hide('screen-login');
     show('screen-admin');
+    document.body.classList.remove('has-app');
     Admin.render(app);
   }
 
@@ -101,7 +105,9 @@
     document.getElementById('detail-copy').addEventListener('click', onCopyNumber);
     document.getElementById('detail-cassa').addEventListener('click', onCassaOpen);
 
-    // Aggiungi tessera dalla home (FAB + empty state)
+    // Aggiungi tessera dalla home (pulsante alto + FAB + empty state)
+    // Unica funzione handler condivisa.
+    document.getElementById('btn-add-top').addEventListener('click', onAddCardClick);
     document.getElementById('fab-add-card').addEventListener('click', onAddCardClick);
     document.getElementById('btn-add-empty').addEventListener('click', onAddCardClick);
 
@@ -135,6 +141,8 @@
           modal.hidden = true;
           // ferma scanner se chiuso
           if (modal.id === 'modal-scanner') Scanner.stop();
+          // stacca handler tastiera se era la modal admin-login
+          if (modal.id === 'modal-admin-login') detachKeyboardHandler();
         }
       });
     });
@@ -170,26 +178,68 @@
       showAdmin();
     } else {
       state.pendingAdminIntent = 'panel';
-      show('modal-admin-login');
-      document.getElementById('admin-password').focus();
+      openAdminLoginModal();
     }
   }
 
-  // Click sul FAB "+ Aggiungi tessera" nella home (o sul bottone nell'empty state).
-  // Se già admin → apre direttamente il form. Altrimenti chiede password admin.
+  // Click sul FAB "+ Aggiungi tessera" nella home (o sul bottone nell'empty state
+  // o sul pulsante in alto). Se già admin → apre direttamente il form.
+  // Altrimenti chiede password admin, poi apre il form.
   function onAddCardClick() {
     if (state.role === 'admin') {
       if (typeof app.openCardForm === 'function') {
         app.openCardForm(null);
       } else {
-        // Fallback: se admin.js non è caricato ancora, vai al pannello
+        // Fallback: se admin.js non è ancora caricato, vai al pannello
         showAdmin();
       }
     } else {
       state.pendingAdminIntent = 'newCard';
-      show('modal-admin-login');
-      document.getElementById('admin-password').focus();
+      openAdminLoginModal();
     }
+  }
+
+  // Apertura modal admin-login con supporto tastiera mobile:
+  // usa visualViewport per tenere il popup sempre visibile sopra la tastiera.
+  function openAdminLoginModal() {
+    const modal = document.getElementById('modal-admin-login');
+    modal.classList.add('modal--keyboard-aware');
+    show('modal-admin-login');
+    // Il focus viene dato dopo un frame così iOS Safari apre subito la tastiera
+    // e il visualViewport handler può già misurare l'altezza corretta.
+    requestAnimationFrame(() => {
+      document.getElementById('admin-password').focus();
+    });
+    attachKeyboardHandler(modal);
+  }
+
+  // Handler per visualViewport: aggiorna --kb-offset sulla modal
+  // così lo sheet si sposta verso l'alto dell'altezza della tastiera.
+  let _kbListener = null;
+  function attachKeyboardHandler(modal) {
+    detachKeyboardHandler();
+    if (!window.visualViewport) return; // fallback gestito da CSS (max-height + dvh)
+    const vv = window.visualViewport;
+    const update = () => {
+      // Differenza tra altezza reale del layout e altezza del visual viewport = tastiera
+      const keyboardHeight = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      modal.style.setProperty('--kb-offset', keyboardHeight + 'px');
+    };
+    update();
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    _kbListener = { vv, update, modal };
+  }
+
+  function detachKeyboardHandler() {
+    if (!_kbListener) return;
+    try {
+      _kbListener.vv.removeEventListener('resize', _kbListener.update);
+      _kbListener.vv.removeEventListener('scroll', _kbListener.update);
+      _kbListener.modal.style.removeProperty('--kb-offset');
+      _kbListener.modal.classList.remove('modal--keyboard-aware');
+    } catch {}
+    _kbListener = null;
   }
 
   async function onAdminLogin(e) {
@@ -203,6 +253,7 @@
       state.role = 'admin';
       document.getElementById('admin-password').value = '';
       hide('modal-admin-login');
+      detachKeyboardHandler();
       await reloadData();
 
       // Esegui l'intento che aveva fatto scattare la richiesta password
