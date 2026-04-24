@@ -73,8 +73,15 @@
     <div id="empty-state" class="empty" hidden>
       <div class="empty__icon">✦</div>
       <p class="empty__text">Nessuna tessera trovata.</p>
-      <p class="empty__sub">Chiedi all'admin di aggiungerne una.</p>
+      <p class="empty__sub">Puoi aggiungerne una dal pulsante qui sotto.</p>
+      <button id="btn-add-empty" class="btn btn--primary" type="button">＋ Aggiungi tessera</button>
     </div>
+
+    <button id="fab-add-card" class="fab" type="button" title="Aggiungi tessera" aria-label="Aggiungi tessera">
+      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+        <path d="M12 5v14M5 12h14"/>
+      </svg>
+    </button>
   </section>
 
   <!-- ========== MODAL DETTAGLIO TESSERA ========== -->
@@ -273,6 +280,14 @@
       <button class="modal__close scanner__close" data-close aria-label="Chiudi">×</button>
       <div id="scanner-box" class="scanner__box"></div>
       <p class="scanner__hint">Inquadra il codice</p>
+      <p id="scanner-error" class="scanner__error" hidden></p>
+      <div class="scanner__manual">
+        <label for="scanner-manual-input" class="scanner__manual-label">Oppure inseriscilo a mano</label>
+        <div class="scanner__manual-row">
+          <input id="scanner-manual-input" type="text" inputmode="numeric" placeholder="Codice" />
+          <button id="scanner-manual-ok" type="button" class="btn btn--primary">Usa</button>
+        </div>
+      </div>
     </div>
   </div>
 
