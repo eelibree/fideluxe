@@ -4,16 +4,16 @@
   /**
    * Renderizza un codice dentro un container.
    * @param {HTMLElement} container
-   * @param {Object} card - {barcode, barcodeType, barcodeImage}
-   * @param {Object} opts - {width, height, large}
+   * @param {Object} card - {barcode, barcodeType, barcodeImage, numero}
+   * @param {Object} opts - {large}
    */
   function render(container, card, opts = {}) {
     container.innerHTML = '';
     if (!card) return;
 
-    const { barcode, barcodeType, barcodeImage } = card;
+    const { barcodeType, barcodeImage, numero } = card;
 
-    // Caso 1: immagine caricata
+    // Caso 1: immagine caricata (barcode da foto)
     if (barcodeType === 'IMAGE' && barcodeImage) {
       const img = document.createElement('img');
       img.src = barcodeImage;
@@ -22,61 +22,90 @@
       return;
     }
 
-    if (!barcode) {
+    // Fallback sul numero tessera se il campo barcode è vuoto
+    const value = (card.barcode && card.barcode.trim()) || (numero && String(numero).trim()) || '';
+
+    if (!value) {
       container.textContent = '—';
       return;
     }
 
-    // Caso 2: QR
+    // Caso 2: QR code
     if (barcodeType === 'QR') {
-      renderQR(container, barcode, opts);
+      renderQR(container, value, opts);
       return;
     }
 
     // Caso 3: barcode 1D con JsBarcode
+    if (typeof JsBarcode === 'undefined') {
+      container.textContent = value;
+      return;
+    }
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     container.appendChild(svg);
     try {
-      JsBarcode(svg, barcode, {
+      JsBarcode(svg, value, {
         format: barcodeType || 'CODE128',
         lineColor: '#2B2620',
-        background: 'transparent',
+        background: '#FFFBF4',
         width: opts.large ? 3 : 2,
         height: opts.large ? 110 : 70,
         displayValue: false,
         margin: 8,
       });
     } catch (e) {
-      // fallback: testo
-      container.textContent = barcode;
+      // valore non compatibile col formato → fallback CODE128
+      container.innerHTML = '';
+      const svg2 = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      container.appendChild(svg2);
+      try {
+        JsBarcode(svg2, value, {
+          format: 'CODE128',
+          lineColor: '#2B2620',
+          background: '#FFFBF4',
+          width: opts.large ? 3 : 2,
+          height: opts.large ? 110 : 70,
+          displayValue: false,
+          margin: 8,
+        });
+      } catch {
+        container.textContent = value;
+      }
     }
   }
 
   /**
-   * Genera un QR code renderizzato come SVG usando un semplice algoritmo.
-   * Per semplicità usiamo una CDN di qrcode via canvas in un <img>.
+   * Rendering QR via qrcodejs (libreria browser-first, global QRCode).
+   * Produce un canvas/img dentro un wrapper.
    */
   function renderQR(container, text, opts) {
-    // Usiamo il servizio di Google Charts non è più disponibile; usiamo una lib inline minima.
-    // Strategia: generiamo un canvas con qrcode.js caricato on-demand.
-    if (!global._qrLoaded) {
-      const s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js';
-      s.onload = () => { global._qrLoaded = true; drawQR(container, text, opts); };
-      document.head.appendChild(s);
-    } else {
-      drawQR(container, text, opts);
+    if (typeof QRCode === 'undefined') {
+      // libreria non ancora caricata (caso limite con defer): retry breve
+      const retry = () => {
+        if (typeof QRCode !== 'undefined') renderQR(container, text, opts);
+        else setTimeout(retry, 80);
+      };
+      retry();
+      return;
     }
-  }
 
-  function drawQR(container, text, opts) {
-    const canvas = document.createElement('canvas');
-    container.appendChild(canvas);
     const size = opts.large ? 220 : 160;
-    QRCode.toCanvas(canvas, text, {
-      width: size, margin: 1,
-      color: { dark: '#2B2620', light: '#FFFBF400' },
-    });
+    const holder = document.createElement('div');
+    holder.className = 'qr-holder';
+    container.appendChild(holder);
+
+    try {
+      new QRCode(holder, {
+        text: String(text),
+        width: size,
+        height: size,
+        colorDark: '#2B2620',
+        colorLight: '#FFFBF4',
+        correctLevel: QRCode.CorrectLevel.M,
+      });
+    } catch (e) {
+      container.textContent = text;
+    }
   }
 
   /**

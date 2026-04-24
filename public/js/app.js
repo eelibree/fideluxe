@@ -84,9 +84,6 @@
     // Logout
     document.getElementById('btn-logout').addEventListener('click', onLogout);
 
-    // Cassa
-    document.getElementById('btn-cassa').addEventListener('click', onCassaOpen);
-
     // Search + filtri
     document.getElementById('search-input').addEventListener('input', (e) => {
       state.filter.search = e.target.value.toLowerCase();
@@ -98,8 +95,10 @@
       renderCards();
     });
 
-    // Preferita nel dettaglio
+    // Azioni nel dettaglio
     document.getElementById('detail-fav').addEventListener('click', onToggleFavFromDetail);
+    document.getElementById('detail-copy').addEventListener('click', onCopyNumber);
+    document.getElementById('detail-cassa').addEventListener('click', onCassaOpen);
 
     // Chiusura modali (backdrop + tasto X)
     document.querySelectorAll('[data-close]').forEach(el => {
@@ -330,21 +329,51 @@
 
   // ============ CASSA ============
   function onCassaOpen() {
-    // Se c'è una tessera selezionata uso quella, altrimenti la prima preferita
-    let card = state.selectedId ? state.cards.find(c => c.id === state.selectedId) : null;
-    if (!card) card = state.cards.find(c => c.preferita);
-    if (!card) card = state.cards[0];
-    if (!card) { toast('Nessuna tessera disponibile'); return; }
+    // La cassa si apre dal dettaglio → usa la tessera attualmente aperta
+    if (!state.selectedId) { toast('Nessuna tessera selezionata'); return; }
+    const card = state.cards.find(c => c.id === state.selectedId);
+    if (!card) { toast('Tessera non trovata', true); return; }
 
     document.getElementById('cassa-name').textContent = card.nome;
     Barcode.render(document.getElementById('cassa-barcode'), card, { large: true });
     document.getElementById('cassa-number').textContent = card.numero || '';
+
+    // Chiudo prima la modal dettaglio per un'animazione pulita
+    hide('modal-detail');
     show('modal-cassa');
 
     // luminosità massima: tenta di richiedere wake lock
     try {
       if ('wakeLock' in navigator) navigator.wakeLock.request('screen').catch(() => {});
     } catch {}
+  }
+
+  // ============ COPIA NUMERO ============
+  async function onCopyNumber() {
+    if (!state.selectedId) return;
+    const card = state.cards.find(c => c.id === state.selectedId);
+    if (!card) return;
+    const num = card.numero || card.barcode || '';
+    if (!num) { toast('Nessun numero da copiare'); return; }
+
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(num);
+      } else {
+        // fallback per browser vecchi / contesti non sicuri
+        const ta = document.createElement('textarea');
+        ta.value = num;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      toast('Numero copiato: ' + num);
+    } catch (e) {
+      toast('Impossibile copiare', true);
+    }
   }
 
   // ============ UTILS ============
