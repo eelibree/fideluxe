@@ -105,9 +105,8 @@
     document.getElementById('detail-copy').addEventListener('click', onCopyNumber);
     document.getElementById('detail-cassa').addEventListener('click', onCassaOpen);
 
-    // Aggiungi tessera dalla home (pulsante alto + FAB + empty state)
+    // Aggiungi tessera dalla home (FAB + empty state)
     // Unica funzione handler condivisa.
-    document.getElementById('btn-add-top').addEventListener('click', onAddCardClick);
     document.getElementById('fab-add-card').addEventListener('click', onAddCardClick);
     document.getElementById('btn-add-empty').addEventListener('click', onAddCardClick);
 
@@ -153,6 +152,37 @@
         hide('modal-cassa');
       }
     });
+
+    // Hint PWA iOS per lo scanner: in alcune versioni iOS la camera non parte
+    // dall'app installata. Se siamo in quel contesto, ogni volta che si apre
+    // la modal scanner mostriamo un banner informativo. In Safari normale
+    // il banner resta nascosto.
+    setupScannerPwaHint();
+  }
+
+  function isIOSPWA() {
+    const ua = navigator.userAgent || '';
+    const isIOS = /iPhone|iPad|iPod/i.test(ua);
+    // navigator.standalone è la flag storica iOS per PWA aggiunta alla home
+    const standalone = window.navigator.standalone === true
+      || window.matchMedia('(display-mode: standalone)').matches;
+    return isIOS && standalone;
+  }
+
+  function setupScannerPwaHint() {
+    const modal = document.getElementById('modal-scanner');
+    const hint = document.getElementById('scanner-pwa-hint');
+    if (!modal || !hint) return;
+    const isPwaIOS = isIOSPWA();
+    if (!isPwaIOS) return; // in Safari normale non mostriamo nulla
+
+    // Osserva il cambio dell'attributo 'hidden' sulla modal scanner.
+    // Quando la modal si apre, mostra il banner; quando si chiude, lo nasconde.
+    const obs = new MutationObserver(() => {
+      const open = !modal.hasAttribute('hidden');
+      hint.hidden = !open;
+    });
+    obs.observe(modal, { attributes: true, attributeFilter: ['hidden'] });
   }
 
   // ============ LOGIN ============

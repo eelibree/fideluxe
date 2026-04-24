@@ -132,9 +132,27 @@
   }
 
   /**
+   * Rileva se l'app è in esecuzione come PWA installata su iOS.
+   * Se sì, il browser WebView non sempre espone getUserMedia correttamente,
+   * o espone solo la camera frontale / restituisce uno stream nero.
+   */
+  function isIOSPWA() {
+    const ua = navigator.userAgent || '';
+    const isIOS = /iPhone|iPad|iPod/i.test(ua);
+    const standalone = window.navigator.standalone === true
+      || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+    return isIOS && standalone;
+  }
+
+  /**
    * Normalizza errori getUserMedia in messaggi leggibili.
    */
   function mapError(err) {
+    // In PWA iOS la camera è notoriamente inaffidabile: il messaggio deve
+    // invitare ad aprire da Safari, lasciando sempre disponibile l'input manuale.
+    if (isIOSPWA()) {
+      return 'Se la fotocamera non si avvia nell\'app installata, apri Fideluxe da Safari per usare la scansione. In alternativa inserisci il numero tessera qui sotto.';
+    }
     if (!err) return 'Impossibile avviare la camera.';
     const name = err.name || '';
     const msg = err.message || String(err);
